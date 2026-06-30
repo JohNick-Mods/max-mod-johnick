@@ -1,0 +1,36 @@
+# Локальные артефакты сборки и большие бинарники не публикуем
+work/
+binaries/
+*.apk
+*.idsig
+*.dex
+*.so
+*.tar
+*.zip
+
+# Промежуточные данные аудита и анализа
+audit-intermediates/
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# Ключи и токены
+*.keystore
+*.jks
+*.pem
+*.pfx
+.env
+.env.*
