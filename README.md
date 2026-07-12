@@ -62,7 +62,7 @@
 
 ---
 
-## 30 переключателей в настройках
+## 29 переключателей в настройках
 
 **Long-press** по строке версии (Настройки → О приложении) откроет диалог с тумблерами. **Short-tap** — «Проверить обновления». Все по умолчанию **OFF** — до первого включения мод ведёт себя идентично стоку (антидетект). Диалог следует системной теме.
 
@@ -161,7 +161,7 @@ adb shell pm set-app-links-user-selection --user 0 --package ru.oneme.ap2 true m
 
 | Версия | Дата | Ключевое |
 |---|---|---|
-| **26.22.2 GP V1** | 2026-07-12 | Bump стока 6772→6779. Fix 3 багов «Умной античиталки» (batch WS-send GATE-2, реальный chat-open driver `qza.a`, event-holder `Lege`). Расширение антидетект-логики на обычный `antiRead`. `startOnNew` RE-ENABLED. «Проверить обновления» short-tap. Реальный чокпоинт баннера «Госуслуги» (PmsProperty 0x9d). `hideFavorites` DEFER. 30 тумблеров |
+| **26.22.2 GP V1** | 2026-07-12 | Bump стока 6772→6779. Fix 3 багов «Умной античиталки» (batch WS-send GATE-2, реальный chat-open driver `qza.a`, event-holder `Lege`). Расширение антидетект-логики на обычный `antiRead`. `startOnNew` RE-ENABLED. «Проверить обновления» short-tap. Реальный чокпоинт баннера «Госуслуги» (PmsProperty 0x9d). `hideFavorites` DEFER. 29 тумблеров |
 
 ---
 
