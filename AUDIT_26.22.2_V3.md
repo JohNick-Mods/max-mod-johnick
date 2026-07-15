@@ -1,11 +1,59 @@
-# MAX 26.22.2 V2 — Технический аудит мода
+# MAX 26.22.2 V3 — Технический аудит мода
 
 **Версия стока**: 26.22.2 (build 6779)
-**Версия мода**: V2 (Privacy Mod by JohNick)
-**Дата**: 2026-07-13
+**Версия мода**: V3 (Privacy Mod by JohNick)
+**Дата**: 2026-07-15
 **Совместимость**: `ru.oneme.app` (Android 8.0–16.0 / API 26–36) · arm64-v8a + armeabi-v7a · основной + клон (`ru.oneme.ap2`)
 
-> **26.22.2 V2**: исправлен баг ре-непрочитанных в каналах при включённых античиталках — каналы теперь всегда ведут себя как в стоке независимо от флагов `antiRead`/`smartAntiRead`/`invisible`.
+> **26.22.2 V3**: серия фиксов «Проверить обновления» — исправлен «Не удалось открыть установщик» после скачивания, правильный парсинг тегов с суффиксами (`.2`, `-V2`), новая кнопка «Скачать последнюю» для принудительного скачивания свежей версии с mirror-репо (без ожидания пока UpdateChecker решит что «обновлений нет»).
+
+---
+
+## 🐞 Исправлено в 26.22.2 V3
+
+### 🔧 UC-1 — «Не удалось открыть установщик» после скачивания APK
+
+**Симптом**: пользователь через «Проверить обновления» скачивал новую версию, но при попытке открыть установщик получал ошибку «Не удалось открыть установщик».
+
+**Корневая причина**: `UpdateChecker.downloadAndInstall()` сохранял APK в `Context.getExternalCacheDir()/updates/`, но встроенный в APK `provider_paths.xml` не содержит `<external-cache-path>` (только `<cache-path>` = internal cache, `<external-path>` = /sdcard root, `<files-path>` = внутренние файлы). `FileProvider.getUriForFile()` не находил соответствия пути → бросал `IllegalArgumentException: Failed to find configured root that contains ...` → catch Throwable → «Не удалось открыть установщик».
+
+**Фикс** (`apply_v_update_checker_v3.py`, sentinel `:uc1_cache_dir`): в `downloadAndInstall` заменён вызов `getExternalCacheDir()` на `getCacheDir()`. Internal cache уже покрыт `<cache-path name="cache" path="" />` в существующем `provider_paths.xml` — работает без правки XML. APK (~40 MB) сохраняется в `/data/data/pkg/cache/updates/`, установщик успешно открывается через FileProvider.
+
+### 🔧 UC-2 — parseVersion правильно парсит теги с суффиксами
+
+**Симптом (обходно исправлен в V2)**: тег `v26.22.2-V2` на mirror-репо ломал сравнение версий → «Обновлений не обнаружено» даже когда обновление есть.
+
+**Корневая причина**: `parseVersion()` делал `split("\\.") + Integer.parseInt()` на каждой компоненте. Тег `26.22.2-V2` → `["26","22","2-V2"]` → `parseInt("2-V2")` бросает `NumberFormatException` → catch → компонент = 0. Результат `[26,22,0]` выглядит СТАРЕЕ текущего `[26,22,2]` → UpdateChecker решал «релиз старее моей версии» → «обновлений нет».
+
+**Фикс** (`apply_v_update_checker_v3.py`, sentinel `:uc2_strip_nondigits`): перед `Integer.parseInt` добавлен вызов `String.replaceAll("[^0-9].*", "")` — оставляет только цифры до первого не-цифрового символа. `"2-V2"` → `"2"`, `"2.rc1"` → `"2"`, `"beta"` → `""` (NFE → 0). Теперь и `-V2` суффиксы, и `.2` формат корректно парсятся.
+
+Обход через `.2` (feedback_mirror_tag_naming) остаётся рабочим, но больше не обязателен.
+
+### 🎨 UC-3 — Явные лейблы кнопок в диалоге установки
+
+**Изменение UX**: в диалоге «Скачать и установить vX.Y.Z?» кнопки `Да`/`Нет` заменены на `Установить`/`Отмена` — ясно объясняет что произойдёт по нажатию.
+
+**Фикс** (`apply_v_update_checker_v3.py`, sentinel `:uc3_confirm_labels`): в `confirmUpdate()` заменены `const-string` для Positive и Negative кнопок.
+
+### 🆕 UC-4 — Новая кнопка «Скачать последнюю»
+
+**Use case**: пользователь хочет принудительно скачать свежий APK с mirror-репо, независимо от того, что показывает UpdateChecker. Актуально:
+- Для восстановления битой установки (реинсталл текущей версии).
+- Для форсированного обновления когда логика сравнения версий подводит.
+- Для быстрого доступа к latest без прохождения через диалог «Проверить? → Да → список → выбор → подтверждение».
+
+**Реализация** (`apply_v_update_checker_v3.py`, sentinels `:uc4_dl_latest_btn`, `:uc4_onclick_mode13`, `:uc4_run_mode14`, `:uc4_run_mode15`):
+1. В главном диалоге `checkAndPrompt` («Проверить обновления? [Да|Нет]») добавлена Neutral-кнопка **«Скачать последнюю»**.
+2. Нажатие → новый listener (mode=13) → запускает `Thread(UpdateChecker(mode=14, ctx))`.
+3. `run()` mode=14 (BG): `fetchReleases()` → JSONArray[0] (mirror `--latest` → первый non-draft/non-prerelease release) → `tag_name` → post на main mode=15.
+4. `run()` mode=15 (main): `startInstall(ctx, latestTag)` → существующий download+install path (permission gate + Thread + downloadAndInstall).
+
+**Toast «Ищу последнюю на mirror…»** — короткая индикация начала операции. При отсутствии релизов или сетевой ошибке — стандартные Toast'ы `postError`.
+
+**Поведение при разных сценариях**:
+- Latest на mirror = текущая версия → «переустановка» (recovery).
+- Latest = новее → force-update.
+- Latest = старее → всё равно установится (юзер хочет именно latest с mirror).
 
 ---
 
