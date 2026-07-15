@@ -1,9 +1,15 @@
-# MAX 26.22.2 GP V3 — Mods by JohNick
+# MAX 26.22.2 GP V4 — Mods by JohNick
 
 **Дата**: 2026-07-15 · **Сток**: 26.22.2 (build 6779) · **Android**: 8.0+ (API 26+)
 **APK**: 4 файла (arm64 + arm7 × main + clone) · Universal (GP) · Подпись v2+v3
 
 ---
+
+## 🐞 Что исправлено в V4
+
+- **✅ «Скачать последнюю» — работает end-to-end.** В V3 диалог мог крашить приложение (VerifyError из-за конфликта регистров ProgressDialog vs Context), скачивание либо не запускалось, либо файл клался в неохваченный FileProvider'ом путь, а сам FileProvider был shrunk R8 и терял публичный `getUriForFile`. Все четыре звена — verifier, download-loop, subdir, URI-build — переделаны заново: класс проходит верификацию, download идёт в `cache/upload/` (whitelisted), URI строится вручную (`content://<pkg>.provider/upload/<file>`), установщик Android открывается.
+- **🔁 «Крутилка» вместо застывшего 0%.** ProgressDialog переключён в STYLE_SPINNER + indeterminate — теперь видно, что идёт работа, и диалог гарантированно закрывается по завершении (или по ошибке — через post mode=8 из fail-веток).
+- **🔢 Точный номер версии.** `currentVersion()` возвращает hardcoded «26.22.2.4» вместо `versionName` из манифеста (`26.22.2`) — теперь `compareTags` корректно оценивает свою же сборку и не показывает ложное «есть обновление».
 
 ## 🐞 Что исправлено в V3
 
@@ -50,17 +56,17 @@
 ## 🔒 SHA-256
 
 ```
-9a5958026d9cb3e99a9fff482f303d2de4bdf47f8fb19a8cbaec7213dec85b53  MAX_26.22.2_arm64_V3.apk
-769fa8c7dbe59c1f56dbd786a1a5ca12ba0a15e0936c106f021d3c0182b61064  MAX_26.22.2_arm64_V3_clone.apk
-89ad837db76b8b29c64f4b28b5c8ce465ca7d25b81f33b05d5d1d3eaeebd5b3f  MAX_26.22.2_arm7_V3.apk
-de5c51d110f1f1e674f4a3cec8e24730bd875a2ef5dee990bdf6acc3e24fbfc3  MAX_26.22.2_arm7_V3_clone.apk
+a755aa7b79cb6d06b528bcdaeeaae813b06324b3d162ffe772a90f5527a0e671  MAX_26.22.2_arm64_V4.apk
+d1bcadc9596fc87696a5dac5f688fadf0ca5bb876543343af6a7938ebd03a8a0  MAX_26.22.2_arm64_V4_clone.apk
+6068adad4fbf04d246ee2f40b73a0303841e82b4094e773b26ede6525304971b  MAX_26.22.2_arm7_V4.apk
+d40cf56a2a9e5ec690c6b01e605516ad43179276e9f999873e1522f9244b1166  MAX_26.22.2_arm7_V4_clone.apk
 ```
 
 Cert SHA-1: `d6a7d757…1298b` — одинаков для всех сборок 26.x.
 
 ## 📄 Документация
 
-- Полный технический аудит — `AUDIT_26.22.2_V3.pdf` (markdown: `AUDIT_26.22.2_V3.md`).
+- Полный технический аудит — `AUDIT_26.22.2_V4.pdf` (markdown: `AUDIT_26.22.2_V4.md`).
 - Пост для 4PDA — в исходниках проекта.
 
 ---
