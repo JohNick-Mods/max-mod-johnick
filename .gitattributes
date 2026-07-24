@@ -1,0 +1,3 @@
+# SHA256SUMS публикуется как release-ассет: только LF,
+# иначе `sha256sum -c SHA256SUMS` падает на Linux/macOS/WSL
+SHA256SUMS text eol=lf
