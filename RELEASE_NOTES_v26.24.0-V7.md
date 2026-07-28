@@ -1,14 +1,37 @@
-# MAX Mod v26.24.0 V7 (RuStore) — ringback tone на исходящих звонках
+# MAX Mod v26.24.0 V7 (RuStore)
 
 **Сток:** 26.24.0 (RuStore, RS variant) · **Совместимость:** Android 8.0–16.0 (API 26–36) · arm64-v8a + armeabi-v7a · основной + клон (`ru.oneme.ap2`)
 
-Релиз поверх V4. Единственное новшество: гудок (ringback tone) на исходящих звонках — Samsung-устройства воспроизводят `/system/media/audio/ui/Dialer_new.ogg` через `MediaPlayer + AudioAttributes.USAGE_ALARM` (обходит DND/беззвучный режим); прочие устройства — `ToneGenerator(STREAM_VOICE_CALL, TONE_SUP_RINGTONE=19)`. Гудок останавливается при ответе (`markActive`) или завершении звонка (`destroy`). **Весь функционал V4 сохранён, безопасность и приватность не менялись.** Ставится через `install -r` поверх любой сборки 26.x — данные сохраняются.
+Релиз поверх V4. **Весь функционал V4 сохранён, безопасность и приватность не менялись.** Ставится через `install -r` поверх любой сборки 26.x — данные сохраняются.
 
-## 📞 Что нового в V7
+## 🆕 Что нового в V7
 
-- **🔔 Гудок на исходящих звонках.** Инжектирован класс `one.me.util.RingbackTonePlayer`. Samsung: `Ringtone` (MediaPlayer) + `AudioAttributes.USAGE_ALARM` → файл `/system/media/audio/ui/Dialer_new.ogg` (системный, всегда присутствует в One UI), looping, обходит DND и беззвучный режим. Прочие устройства: `ToneGenerator.TONE_SUP_RINGTONE` на `STREAM_VOICE_CALL`. Определение по `Build.MANUFACTURER.equalsIgnoreCase("samsung")`. Корректный lifecycle: `start()` при инициализации звонка, `stop()` при ответе (`markActive`) и разрыве (`destroy`) — утечек ресурсов нет.
+### 🔒 PIN-блокировка запуска
+Тумблер **«Блокировка приложением»** (`appLock`) — перед открытием MAX показывается PIN-диалог. Опционально: тумблер **«Использовать биометрию»** (`appLockUseBiometric`) разблокирует через отпечаток пальца / PIN устройства (`KeyguardManager`). При отмене биометрии — fallback на PIN мода.
 
-## 🐞 Из V4 — сохранено
+### ⏩ Скорость воспроизведения голосовых и видео-кружков
+Тумблер **«Скорость воспроизведения»** (`playbackSpeed`) — выбор из 0.5× / 0.75× / 1.0× / 1.25× / 1.5× / 2.0×. Применяется через `setPlaybackSpeed()` на media3 `MediaController`.
+
+### 📞 Гудок на исходящих звонках
+Класс `one.me.util.RingbackTonePlayer`. **Samsung** (определяется по `Build.MANUFACTURER`): `Ringtone` + `AudioAttributes.USAGE_ALARM` → `/system/media/audio/ui/Dialer_new.ogg`, looping, обходит DND и беззвучный режим. **Прочие устройства:** `ToneGenerator(STREAM_VOICE_CALL, TONE_SUP_RINGTONE=19)`. Гудок останавливается при ответе (`markActive`) или завершении (`destroy`) — утечек ресурсов нет.
+
+### 🔔 Дедупликация повторных уведомлений (antiRead)
+При `antiRead=ON` сервер может повторно отдавать «непрочитанное» на реконнекте. Теперь одно сообщение не уведомляет дважды — хелпер `notifShouldSuppress(msgId)` держит dedup-список последних 500 msgId.
+
+### ⌚ Watch-улучшения (V5–V7)
+
+- **WATCH-11:** Compact nag-баннеры (mic / contacts permission) скрываются на часах — не перекрывают интерфейс.
+- **WATCH-13:** Строка Stories скрыта на часах без freeze при скролле (INVISIBLE + alpha=0 вместо GONE, обход `StoriesAppBarBehavior`).
+- **WATCH-14:** Кнопка голосового сообщения принудительно показана на часах (гейт `widthPixels<500`); на телефоне — без изменений.
+
+### 🔧 Прочие фиксы
+
+- **🗑️ Префикс удалённых сообщений** — восстановлен `🗑️` в тексте удалённых (был потерян при миграции на 26.24.0).
+- **🎵 Рингтон MAX на One UI 7** — починен FD-leak при воспроизведении фирменного рингтона (Android 15).
+
+---
+
+## ⌚ Из V4 — сохранено
 
 - Bounded ScrollView в диалогах мода на часах (55% `heightPixels`).
 - Точечное скрытие `topIndicatorView` на часах (гейт `widthPixels < 500`).
@@ -23,11 +46,10 @@ WS-redirect от сервера MAX не блокируется. SMS-код до
 
 ## ⚠ Известные ограничения
 
-- **Ringback (Samsung):** требует `/system/media/audio/ui/Dialer_new.ogg`. На One UI всегда присутствует; на кастомных прошивках — silent-fail (звонок в штатном режиме).
+- **Ringback (Samsung):** требует `/system/media/audio/ui/Dialer_new.ogg`. На One UI всегда присутствует; на кастомных прошивках — silent-fail (звонок без гудка).
 - **Ringback (AOSP):** `TONE_SUP_RINGTONE` — звучание зависит от прошивки.
 - **AMOLED** — покрытие ~95% (список чатов и нижние шторки могут остаться тёмно-серыми).
 - **Диалоги мода — тёмная схема** (фиксированный тёмный фон для контраста).
-- **Закруглённые диалоги** — best-effort у системных диалогов.
 - **Watch-фичи** активны только при `widthPixels < 500` (гейт runtime).
 
 ## Какой APK качать
@@ -44,7 +66,7 @@ WS-redirect от сервера MAX не блокируется. SMS-код до
 ## Подпись
 
 - apksigner **v2 + v3** (без v1). Cert SHA-1: `d6a7d757…1298b` — одинаков для всех сборок 26.x → `install -r` поверх любой предыдущей версии мода без потери данных.
-- Smoke: Samsung S25 (`RFCX5013V5F`), Android 15, arm64 — main + clone без FATAL / VerifyError. Ringback подтверждён по logcat (start/stop на lifecycle звонка). Все sentinel'ы V4 + ringback-sentinel'ы подтверждены в DEX.
+- Smoke: Samsung S25 (`RFCX5013V5F`), Android 15, arm64 — main + clone без FATAL / VerifyError. Все sentinel'ы подтверждены в DEX.
 
 ## SHA-256
 
