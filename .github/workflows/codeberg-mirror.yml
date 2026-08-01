@@ -1,0 +1,18 @@
+name: Mirror to Codeberg
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  codeberg-mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror to Codeberg
+        run: |
+          git push --prune https://${{ secrets.CODEBERG_TOKEN }}@codeberg.org/${{ github.repository }}.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
