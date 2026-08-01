@@ -13,21 +13,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Diagnostic Secret Check
-        env:
-          TOKEN: ${{ secrets.CODEBERG_TOKEN }}
-        run: |
-          if [ -z "$TOKEN" ]; then
-            echo "❌ ОШИБКА: Секрет CODEBERG_TOKEN пуст или не найден!"
-            exit 1
-          else
-            echo "✅ Секрет найден! Длина токена: ${#TOKEN} символов."
-          fi
-
       - name: Mirror to Codeberg
         env:
-          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          CB_TOKEN: ${{ secrets.CB_TOKEN }}
         run: |
-          AUTH_HEADER=$(echo -n "johnickmods:${CODEBERG_TOKEN}" | base64 -w 0)
+          # Авторизация и отправка
+          AUTH_HEADER=$(echo -n "johnickmods:${CB_TOKEN}" | base64 -w 0)
           git config --global http.https://codeberg.org/.extraheader "AUTHORIZATION: basic ${AUTH_HEADER}"
           git push --force --prune https://codeberg.org/johnickmods/max-mod-johnick.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
