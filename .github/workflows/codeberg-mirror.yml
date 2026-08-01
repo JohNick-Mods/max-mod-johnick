@@ -15,4 +15,4 @@ jobs:
 
       - name: Mirror to Codeberg
         run: |
-          git push --prune https://${{ secrets.CODEBERG_TOKEN }}@codeberg.org/${{ github.repository }}.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+          git push --prune https://${{ secrets.CODEBERG_TOKEN }}@codeberg.org/johnickmods/max-mod-johnick.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
