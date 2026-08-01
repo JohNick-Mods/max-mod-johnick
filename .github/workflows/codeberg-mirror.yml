@@ -17,4 +17,11 @@ jobs:
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         run: |
-          git push --force --prune https://johnickmods:${CODEBERG_TOKEN}@codeberg.org/johnickmods/max-mod-johnick.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+          # Кодируем логин и токен в Base64 для безопасной передачи
+          AUTH_HEADER=$(echo -n "johnickmods:${CODEBERG_TOKEN}" | base64 -w 0)
+          
+          # Настраиваем авторизацию для codeberg.org
+          git config --global http.https://codeberg.org/.extraheader "AUTHORIZATION: basic ${AUTH_HEADER}"
+          
+          # Отправляем код без указания пароля в URL
+          git push --force --prune https://codeberg.org/johnickmods/max-mod-johnick.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
