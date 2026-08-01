@@ -1,0 +1,98 @@
+name: Sync Releases to Codeberg
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to sync (leave empty for all)'
+        required: false
+
+jobs:
+  sync-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync release to Codeberg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+        run: |
+          # Get release info from GitHub
+          if [ "${{ github.event.release.tag_name }}" != "" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ github.event.inputs.release_tag }}"
+          fi
+
+          if [ -z "$TAG" ]; then
+            echo "Getting latest release..."
+            TAG=$(gh release list --repo JohNick-Mods/max-mod-johnick --limit 1 --json tagName -q '.[0].tagName')
+          fi
+
+          echo "Syncing release: $TAG"
+
+          # Get release details from GitHub
+          RELEASE_JSON=$(gh release view "$TAG" --repo JohNick-Mods/max-mod-johnick --json name,body,isDraft,isPrerelease -q '.[]')
+          RELEASE_NAME=$(gh release view "$TAG" --repo JohNick-Mods/max-mod-johnick --json name -q '.name')
+          RELEASE_BODY=$(gh release view "$TAG" --repo JohNick-Mods/max-mod-johnick --json body -q '.body')
+
+          # Create release on Codeberg
+          echo "Creating release on Codeberg..."
+          RELEASE_RESPONSE=$(curl -s -X POST "https://codeberg.org/api/v1/repos/johnickmods/max-mod-johnick/releases" \
+            -H "Authorization: token $CODEBERG_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "tag_name": "$TAG",
+            "name": "$RELEASE_NAME",
+            "body": "$RELEASE_BODY",
+            "draft": false,
+            "prerelease": false
+          }
+          EOF
+          )
+
+          # Check if release was created or already exists
+          if echo "$RELEASE_RESPONSE" | grep -q '"id"'; then
+            RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
+            echo "Release created on Codeberg with ID: $RELEASE_ID"
+          elif echo "$RELEASE_RESPONSE" | grep -q 'already exists'; then
+            echo "Release already exists on Codeberg"
+            RELEASE_ID=$(curl -s "https://codeberg.org/api/v1/repos/johnickmods/max-mod-johnick/releases/tags/$TAG" \
+              -H "Authorization: token $CODEBERG_TOKEN" | jq -r '.id')
+          else
+            echo "Error creating release: $RELEASE_RESPONSE"
+            exit 1
+          fi
+
+          # Download and upload assets
+          echo "Syncing assets..."
+          ASSETS=$(gh release view "$TAG" --repo JohNick-Mods/max-mod-johnick --json assets -q '.assets[].name')
+
+          for ASSET in $ASSETS; do
+            echo "Processing asset: $ASSET"
+
+            # Download from GitHub
+            gh release download "$TAG" --repo JohNick-Mods/max-mod-johnick --pattern "$ASSET" -O "$ASSET" 2>/dev/null || {
+              echo "Failed to download $ASSET"
+              continue
+            }
+
+            # Upload to Codeberg
+            if [ -f "$ASSET" ]; then
+              echo "Uploading $ASSET to Codeberg..."
+              ASSET_SIZE=$(stat -f%z "$ASSET" 2>/dev/null || stat -c%s "$ASSET" 2>/dev/null)
+
+              curl -s -X POST "https://codeberg.org/api/v1/repos/johnickmods/max-mod-johnick/releases/$RELEASE_ID/assets" \
+                -H "Authorization: token $CODEBERG_TOKEN" \
+                -F "attachment=@$ASSET" > /dev/null
+
+              echo "✓ Uploaded $ASSET"
+              rm -f "$ASSET"
+            fi
+          done
+
+          echo "✓ Release sync completed for $TAG"
