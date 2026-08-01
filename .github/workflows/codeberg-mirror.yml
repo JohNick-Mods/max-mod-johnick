@@ -1,0 +1,23 @@
+name: Mirror to Codeberg
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  codeberg-mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror to Codeberg
+        env:
+          CB_TOKEN: ${{ secrets.CB_TOKEN }}
+        run: |
+          # Авторизация и отправка
+          AUTH_HEADER=$(echo -n "johnickmods:${CB_TOKEN}" | base64 -w 0)
+          git config --global http.https://codeberg.org/.extraheader "AUTHORIZATION: basic ${AUTH_HEADER}"
+          git push --force --prune https://codeberg.org/johnickmods/max-mod-johnick.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
