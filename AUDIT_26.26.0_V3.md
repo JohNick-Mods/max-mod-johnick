@@ -86,10 +86,10 @@
 
 | Файл | SHA-256 |
 |---|---|
-| `MAX_26.26.0_arm64_V3.apk` | `41729594cf8fbc578d3d9d836d5a6b7a53b647933d168b3b38df78280475ce8d` |
-| `MAX_26.26.0_arm64_V3_clone.apk` | `d58e0e0318fcc98c1a2a35196d06c9282a59e488fb2bd058b68aeb7c7d305f5f` |
-| `MAX_26.26.0_arm7_V3.apk` | `554fd694abbab4ac16414b414439840e5a8a964897c0d50c4dd20197d058ef39` |
-| `MAX_26.26.0_arm7_V3_clone.apk` | `7c6f1faa0644b84932df731485ddb03e89e5be4f8d0a70199e121cc83e4f3e2f` |
+| `MAX_26.26.0_arm64_V3.apk` | `298cd36aecab1f5ec7cb0108e6499a43b39aeaa3d87fed0eb6a8e974ff16d957` |
+| `MAX_26.26.0_arm64_V3_clone.apk` | `0e48bc47900b54031612221a20c7142cef24bed41082af1468ddee9f46aa88c1` |
+| `MAX_26.26.0_arm7_V3.apk` | `664d5824c005b72e4d73317eb2241372732d6ffbeff593dfc2069358af26fba5` |
+| `MAX_26.26.0_arm7_V3_clone.apk` | `bd5919fd7eea78cb150d54631cc358b69e06ff8cc4cd1b5c937ee8a145acd6e1` |
 
 Подпись: v2+v3 APK Signature Scheme. Cert SHA-1 идентичен V1/V2 — install -r без потери данных.
 
