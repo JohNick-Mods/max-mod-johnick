@@ -1,15 +1,40 @@
-# MAX 26.26.0 V3 — Технический аудит мода
+# MAX 26.26.0 V4 — Технический аудит мода
 
 **Версия стока**: 26.26.0  
-**Версия мода**: V3 (Privacy Mod by JohNick)  
-**Дата**: 2026-08-10  
+**Версия мода**: V4 (Privacy Mod by JohNick)  
+**Дата**: 2026-08-12  
 **Совместимость**: `ru.oneme.app` (Android 8.0–16.0 / API 26–36) · arm64-v8a + armeabi-v7a · основной + клон (`ru.oneme.ap2`)
 
-> **V3**: убрана иконка 🗑️ на удалённых сообщениях (по запросу). Антиудаление сохраняет текст и время удаления.
+> **V4**: ручной порядок закреплённых чатов (drag за pin-иконку, безусловно); авто-выход из любых групп; фиксы (SMS-регистрация, исчезающие чаты из-за hideChannels-гейта, умная античиталка без «Невидимки», сужение фильтров «MAX для бизнеса»).
+> Изменения V4 — **UX-only**: слой нейтрализации телеметрии и приватности идентичен V3 (см. разделы ниже без изменений).
 
 ---
 
-## 🐞 Исправлено в V3
+## 🆕 V4 — новые UX-фичи
+
+### 📌 Ручной порядок закреплённых чатов
+- Реализация: `apply_v_pinned_sort.py` (Comparator по CSV-порядку в `AppFlags.pinned_order`) + `apply_v_pinned_drag.py` (subclass `Lhk8` — ItemTouchHelper.Callback UP|DOWN, drag-handle OnTouchListener на pin-иконке `Lvs2;->w`).
+- Инъекция в `r10.b` после `move-result-object p1` (sentinel `:pinned_sort_v1`).
+- Данные хранятся локально в `SharedPref "app_flags"`. Ничего не отправляется на сервер.
+- Фича безусловная (нет тумблера).
+
+### 🚪 Авто-выход из групп для любых чатов
+- Тумблер `autoLeaveGroupInvites` (по умолчанию OFF). Теперь без исключений по контактам.
+- Реализация: enqueue в `ome.i` + drain/leave в `ou2.W`.
+
+---
+
+## 🐞 V4 — исправления
+
+- **SMS-Retriever инициализация** — вынесена из-под гейта `blockMobileIdVerify` → SMS с кодом подтверждения приходят стабильно.
+- **filterChatList OR-гейт** — `hideChannels` убран из общего OR-гейта и из 6 title-веток (живёт отдельно в `apply_v_hide_channels.py` через `ChatType==CHANNEL`).
+- **Сужены substring-фильтры сервис-чатов**: `подтвержд`→`коды подтвержд`, `интересное`→`интересное для вас`, `бизнес`→`max для бизнеса` (lowercase-контекст).
+- **filterPageList `hideBusinessPromo`** — с `contains "бизнес"` (v5, оригинал) на `toLowerCase()`+`contains "max для бизнеса"` (v7). Аналогично в `filterSettingsList`.
+- **smartAntiRead scroll-fix v3** — добавлена ветка `smartAntiRead=ON, invisible=OFF` в `c2/ara.smali :sar_noninvis_gate`.
+
+---
+
+## 🐞 Исправлено в V3 (унаследовано)
 
 ### Убрана иконка 🗑️ на удалённых сообщениях
 
