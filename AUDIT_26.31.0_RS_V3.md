@@ -1,11 +1,11 @@
-# MAX 26.31.0 RS V1 — Технический аудит мода
+﻿# MAX 26.31.0 RS V3 — Технический аудит мода
 
 **Версия стока**: 26.31.0 RS
-**Версия мода**: V1 (Privacy Mod by JohNick)
-**Дата**: 2026-09-14
+**Версия мода**: V3 (Privacy Mod by JohNick)
+**Дата**: 2026-09-16
 **Совместимость**: `ru.oneme.app` (Android 8.0–16.0 / API 26–36) · arm64-v8a + armeabi-v7a · основной + клон (`ru.oneme.ap2`)
 
-> **V1**: первый релиз на базе стока 26.31.0 RS. Полный перенос (~202 патч-скрипта) с ребампом R8-маппинга. Устранено 7 крашей нового стока, 5 багов E2E-шифрования (в т.ч. критическое авто-включение без согласия), 1 краш звонков, 7 UI-регрессий, 10 функциональных дефектов. Гонка мутации E2E-сессии закрыта синхронизацией. Предыдущий публичный релиз — 26.29.1 V12 (2026-09-10).
+> **V3**: хотфикс-релиз поверх V1 (v26.31.0.1). Добавлено: фикс краша QR-сканера (A8), пустой список «Устройства» (F11), **фикс отправки видео (F12)**, синхронизация «Автообновления», 8 R8-drift-фиксов аудита, voice-download реактивирован. на базе стока 26.31.0 RS. Полный перенос (~202 патч-скрипта) с ребампом R8-маппинга. Устранено 7 крашей нового стока, 5 багов E2E-шифрования (в т.ч. критическое авто-включение без согласия), 1 краш звонков, 7 UI-регрессий, 10 функциональных дефектов. Гонка мутации E2E-сессии закрыта синхронизацией. Предыдущий публичный релиз — 26.29.1 V12 (2026-09-10).
 
 ---
 
@@ -165,6 +165,51 @@ ViewHolder `Lbz4` (itemView = `android.widget.TextView`) рендерил E2E-п
 
 ---
 
+
+## 🔍 Исправления V2 (26.31.0.2) и V3 (26.31.0.3)
+
+### 💥 Краш «Устройства → Войти по QR-коду» (A8) — FIXED V2
+
+`QrScannerWidget.v1` падал VerifyError: носитель `getView()` `Lus4` (26.29.1) отсутствует в 26.31.0. Фикс: `Lus4 → Loz4` в `apply_v_e2e_qr_scanner_hook.py` (как в стоковом теле v1). Device-verified S25: QR-скан работает.
+
+### 📱 Пустой список «Устройства» (F11) — FIXED V2
+
+`apply_v_hide_settings_oye` мис-таргетился: в 26.31.0 `c3/lkg.smali` — VM экрана «Устройства» (devices), НЕ настроек. Инжект вызывал `filterSettingsList` на СПИСКЕ УСТРОЙСТВ → вычищал элементы. Фикс: скрипт исключён из APPLY_STEPS (hide-настроек работает через `xhg.r()`/`filterSettingsListCopy`, F8). Device-verified S25: полный список (текущая + 3×WEB + 2×ANDROID).
+
+### 🎬 Не отправляются видео (F12) — FIXED V3
+
+**Симптом**: фото уходят, видео — нет (Redmi WGJBBEY9SSMN8TIB).
+
+**Корень**: `apply_v_e2e_attach_upload_b.py` в `UploadFileAttachWorker.getForegroundInfo()` (метод `j()` = `getForegroundInfoAsync`) вставил блок с ПРОТУХШИМИ R8-именами 26.29.1:
+- `Lcb9;->b:Landroidx/work/WorkerParameters;` — в 26.31.0 `cb9` теперь lambda (поля `b` нет; базовый класс воркера = `sl9`)
+- `Landroidx/work/WorkerParameters;->b:Lw35;` — реально `b:Lta5;` (InputData)
+- `Lw35;->c(Ljava/lang/String;J)J` — метода нет
+
+WorkManager для expedited-задачи вызывает `getForegroundInfo` ДО `doWork` → `NoSuchFieldError` → задача тихо отменяется → видео не отправляется. Фото идут инлайн-аплоадом, минуя этот воркер.
+
+**Дополнительно**: `apply_v_e2e_attach_upload_a.py` (E2E-шифрование вложений) в 26.31.0 — GUARD SKIP (`c2/iii.smali` отсутствует, `Laqi;->valueOf` исчез) → шифрование вложений не работает → патч B был бессмыслен и вреден.
+
+**Фикс**: `apply_v_e2e_attach_upload_b.py` исключён из E2E_ONLY_STEPS; инжект откачен к стоковому `p()Lhza`-фрагменту. **Device-verified Redmi 16.09.2026: видео отправляется.**
+
+### 🔄 Синхронизация «Автообновления» (новая фича)
+
+Стоковый switch «Автообновление» (Настройки → О приложении) = зеркало мод-флага «Автоматически проверять при запуске» (`AppFlags.autoUpdateCheck`, UpdateChecker на GitHub). `apply_v_sync_autoupdate.py`: `n0.k(JZ)V` пишет только `autoUpdateCheck` (стоковый `app.selfservice.update` остаётся false — оригинал не перезатрёт мод), `h0.r()` рисует checked из мод-флага. Sentinel `:auto_update_sync_v1`.
+
+### 🛠 R8-drift фиксы аудита (V3, 8 скриптов)
+
+| Скрипт | Дрейф 26.29.1 → 26.31.0 |
+|--------|--------------------------|
+| `allow_any_filetype` | c3/dnd → **c4/g4e** (был NO-OP → активен: обход клиентского блэклиста расширений) |
+| `dps_boot_gate` | DpsInitProvider c3 → **c2** |
+| `noip_telemetry` | `:cond_1c5`→`:cond_1c1`, `Lko9`→`Liz9` |
+| `p0_telem_dps` | фикс `path is None` (раньше крэш) |
+| `pinned_drag` | `Luie`→`Le4f`, `Lc20`→`Lh40`, `Lm93`→`Lbe3` |
+| `search_hide_channels_rows` | `Lsf3`→`Lkk3`, `Ldq7`→`Ljz7` (иначе VerifyError/мёртвый фильтр) |
+| `settings_filter_fix` | перенесён после apply_v22_settings (snapshot стирал фикс F8/F4) |
+| `voice_download` | реактивирован (якорь c3/s63.smali существует, sentinel приземлён) |
+
+Также: `apply_v_manual_update_check` выключен (NO-OP на 26.31.0), `apply_v_filter_chatlist_k1a` выключен (мёртвая фича), `r8_drift_gate.py` научился динамическому резолву TARGET (rebalance_dex: c3/v4b → c1/v4b).
+
 ## ✅ Верификация
 
 - **Сборка**: `make_v1.py --strict` — все 4 APK прошли gate (`exact_abi`, `no_tracer`, v2+v3 подпись `apksigner`, distinct arm64/armeabi-v7a SHA256 ассетов).
@@ -183,4 +228,4 @@ ViewHolder `Lbz4` (itemView = `android.widget.TextView`) рендерил E2E-п
 
 ---
 
-*Аудит подготовлен по результатам fan-out аудита и трекера BUGS.md (секция 26.31.0 RS), сессия 2026-09-14.*
+*Аудит подготовлен по результатам fan-out аудита и трекера BUGS.md (секция 26.31.0 RS), сессии 2026-09-14/16. V3 = V1 + V2 + R8-drift аудит.*
