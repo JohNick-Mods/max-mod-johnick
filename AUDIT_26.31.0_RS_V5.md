@@ -1,11 +1,11 @@
-﻿# MAX 26.31.0 RS V3 — Технический аудит мода
+﻿# MAX 26.31.0 RS V5 — Технический аудит мода
 
 **Версия стока**: 26.31.0 RS
-**Версия мода**: V3 (Privacy Mod by JohNick)
-**Дата**: 2026-09-16
+**Версия мода**: V5 (Privacy Mod by JohNick)
+**Дата**: 2026-09-18
 **Совместимость**: `ru.oneme.app` (Android 8.0–16.0 / API 26–36) · arm64-v8a + armeabi-v7a · основной + клон (`ru.oneme.ap2`)
 
-> **V3**: хотфикс-релиз поверх V1 (v26.31.0.1). Добавлено: фикс краша QR-сканера (A8), пустой список «Устройства» (F11), **фикс отправки видео (F12)**, синхронизация «Автообновления», 8 R8-drift-фиксов аудита, voice-download реактивирован. на базе стока 26.31.0 RS. Полный перенос (~202 патч-скрипта) с ребампом R8-маппинга. Устранено 7 крашей нового стока, 5 багов E2E-шифрования (в т.ч. критическое авто-включение без согласия), 1 краш звонков, 7 UI-регрессий, 10 функциональных дефектов. Гонка мутации E2E-сессии закрыта синхронизацией. Предыдущий публичный релиз — 26.29.1 V12 (2026-09-10).
+> **V5**: релиз поверх V3 (v26.31.0.3); V4 (v26.31.0.4) не публиковался — его фиксы вошли в V5. Добавлено с V3: краш «Красный» в форматировании (A9), VerifyError y0c (F16), антиудаление после перезапуска (F15), мёртвые тачи прозрачной темы (U8), CCE-чтение prefs (F13), VerifyError KeepAliveWorker (F14), восстановление video_toggle в Call-E2E (B3), сборка без диагностических маркеров. Полный fan-out аудит всех ~290 `apply_v_*.py` по 15 направлениям — критических багов не выявлено. Предыдущий публичный релиз — 26.31.0 RS V3 (2026-09-16).
 
 ---
 
@@ -212,6 +212,73 @@ WorkManager для expedited-задачи вызывает `getForegroundInfo` �
 
 ## ✅ Верификация
 
+- **Сборка (V5b)**: `make_v1.py --strict --e2e --skip-anti-split --skip-baksmali` — все 4 APK прошли gate (`exact_abi`, `no_tracer`, v2+v3 подпись `apksigner`, distinct arm64/armeabi-v7a SHA256 ассетов). Диагностический флаг `--modf19-diag` НЕ передавался — сборка чистая, маркеров `MODF19*` в APK нет.
+- **Статические gate**: `reg_collision_gate.py`, `type_ref_gate.py`, `undefined_method_gate.py` — PASS (0 CRITICAL).
+- **Fan-out аудит (V5, 18.09.2026)**: все ~290 `apply_v_*.py` пройдены 15 параллельными агентами по тематическим группам (Scroll 6/6, Smart-antiread 17/17, Hide 19/19, Search/filter 9/9, Telemetry/VPN 22/22, Watch 11/11, Lock/Security 12/12, Theme/UI 25/25, Ringback/Audio 4/4, Export/Devmenu 13/13, E2E 22/22, Misc-A, Misc-B/DAO 21 CONFIRMED+8 SKIP-OFFLINE, Call-E2E, AboutCards) — багов в собранном APK не найдено; из аудита родились фиксы A9/F15/F16/B3 и документированное ограничение F17. Процедура соответствует HARD-RULE «fan-out аудит перед публикацией».
+- **Device-verify (V5, Redmi WGJBBEY9SSMN8TIB, main+clone, 18.09.2026)**:
+  - Краш «Красный» (A9): выбор «Красный» в ActionMode-меню — без ICCE, `logcat AndroidRuntime` пуст, процесс жив.
+  - Антиудаление (F15+F16): удаление «у всех» с клона → рестарт main → сообщение остаётся с меткой.
+  - Прозрачная тема (U8): тачи работают, UI-поток отзывчив.
+  - Запуск V5b: `Complete` за 713/899 мс, `AndroidRuntime:E` пуст, оба процесса живы.
+- **E2E round-trip S25↔Redmi (B2, E4)**: обмен в обе стороны, `decrypt OK`, `decrypt failed=0`, ANR=0, крашей мода нет (неизменные с V3).
+- **Ringback C1**: device-verified (неизменный с V3).
+
+---
+
+## 🔍 Исправления V4 и V5 (18.09.2026)
+
+### 💥 Краш при выборе «Красный» в форматировании (A9) — FIXED V5
+
+**Симптом**: при выборе «Красный» в ActionMode-меню выделения текста — `IncompatibleClassChangeError: Class one.me.mods.CodeSpan implements non-interface class zp9`. Воспроизведено на клоне ru.oneme.ap2 (Redmi, 22:28).
+
+**Корень (R8-drift RedCode 26.29→26.31)**: `CodeSpan implements Lzp9;`, но в 26.31 `Lzp9;` — КЛАСС (`final`, super `Lo4k;`), не интерфейс. Вызов `Lc6g;->R(Editable;IIZLzp9;)V` в RedCode.smali:86 тоже битый — `c6g` в 26.31 — пустой интерфейс без `R`. Сток 26.31: интерфейс спана `Lu0a;` (implements `Lr15;`), хелпер `Lzx4;->a0(Editable;IIZLu0a;)V`.
+
+**Фикс**: `CodeSpan` → `.implements Lu0a;`, `copy()Lr15;`; RedCode → `Lzx4;->a0(...Lu0a;)V`. Device-verified Redmi 18.09.
+
+### 💥 VerifyError y0c — гейт антиудаления не исполнялся (F16) — FIXED V5
+
+**Симптом**: `y0c.b(Luz2;[JLrp5;)V` — «[0x33] 'this' argument 'Uninitialized Reference: x6b' not instance of 'Reference: cjb'» → класс `y0c` отклонён ART → `addDeletedKept` не вызывался → `deletedKept` пуст → после рестарта sync-удаление гасило сообщение (F15).
+
+**Корень (R8-rebump regression в `apply_v2_ws_central.py`)**: rebump переименовал event wrapper `x6b→cjb`, но в `REPLACE_V4_TAIL` заменили ТОЛЬКО `invoke-direct {v6...}, Lcjb;-><init>` и забыли `new-instance v6, Lx6b;` → создавался объект несовместимого типа. Класс бага: тип `Lx6b` существует и invoke-direct синтаксически валиден — статические gate (`undefined_method`/`reg_collision`/`type_ref`) его не ловят.
+
+**Фикс**: `new-instance v6, Lx6b;` → `new-instance v6, Lcjb;` (единственное место в `REPLACE_V4_TAIL`). Урок: при R8-rebump проверять ВСЕ пары `new-instance`+`invoke-direct`, не только `invoke-direct`.
+
+### 🛡 Антиудаление: сообщение исчезало ПОСЛЕ перезапуска (F15) — FIXED V5
+
+**Симптом**: «удалить у всех» от собеседника — в живом процессе сообщение остаётся, но после перезапуска мода исчезает.
+
+**Корень**: физический `DELETE FROM messages` в `c1/qua.smali` (`c(J,List)` и `b(JJJ)`) вызывается из 7+ мест БЕЗ antiDelete-гейта (`gkb`, `n53`, `g3f`, `id3`, `s0c`, `zib`, `op4`, `ejb`). При рестарте удаление приходит sync-путём (не WS), минуя `y0c.b`, и бьёт напрямую в DAO — `deletedKept` не проверяется.
+
+**Фикс**: `apply_v_antidel_dao_gate.py` — (1) `qua.c(J,List)` сентинел `:adq_dao_gate`: при antiDelete ON фильтрует список через `AppFlags.isDeletedKept(J)Z`, пустой список → return-void; (2) `qua.b(JJJ)` сентинел `:adq_range_gate`: при antiDelete ON return-void (блок диапазонного DELETE). Скрипт добавлен в APPLY_STEPS (`make_v1.py` ~L628, после `apply_v_antidel_push_gate.py`). Device-verified Redmi 18.09: удаление «у всех» с клона → рестарт main → сообщение на месте.
+
+### 🖱 Мёртвые тачи при прозрачной теме (U8) — FIXED V4/V5
+
+**Симптом**: при включённой прозрачной теме «экран не реагирует».
+
+**Корень**: `apply_v_transparent_theme.py` хардкодил БИТЫЕ style-id — `setTheme(0x7f1200d5)` = style/Base.Widget.AppCompat.CompoundButton.CheckBox (НЕ тема) и `applyStyle(0x7f12019e)` (ресурса в APK НЕТ). Настоящие id из `aapt2 dump` V4: `OneMe.Theme.Transparent`=0x7f120146, `ThemeOverlay.MaterialComponents.Light`=0x7f1202f2.
+
+**Фикс**: правильные id в пересборке V4 (16.09 21:20) → тач заработал (подтверждено: logcat Fully drawn, UI-поток отзывчив). Важно: CPU-шторм (~150%) НЕ связан с темой (контрольный NO-OP эксперимент), отдельный вопрос U9 → DEFER 26.32.0.
+
+### ⚠️ CCE при чтении prefs `keep-background-socket` / `user-debug-report` (F13) — FIXED V4
+
+`apply_v_pms_neutralize.py` форсил запись `Boolean.FALSE` в prefs под ключи `user-debug-report` и `keep-background-socket`, а сток 26.31.0 читает их ТИПИЗИРОВАННО (`user-debug-report` → `Long`/enum `zm0`, `keep-background-socket` → enum `Lhp0;`). CCE: `result is class java.lang.Boolean, clazz=class hp0/zm0/Long` → `SharedPreferencesGetException`. Фикс: оба ключа переведены в SKIP (без force-cast), остальные 10 форс-ключей подтверждены Boolean.
+
+### 💥 VerifyError KeepAliveWorker (F14) — FIXED V4
+
+Сток 26.31.0 R8-переименовал `ListenableWorker`→`sl9` (поле `a`=Context), `doWork()`→`d()Lrl9;`, `Result.success()`→`new Lql9`. Шаблон `smali_inject_v22/.../KeepAliveWorker.smali` ссылался на старые имена → VerifyError в WM-WorkerFactory. Фикс: шаблон переписан по стоковому эталону.
+
+### 📹 Call-E2E: video_toggle восстановлен (B3) — FIXED V5 (остальное DEFER)
+
+**Аудит V5 (группа Call-E2E)**: блок `CALL_E2E_ONLY_STEPS` (make_v1:1188-1207) мёртв в 26.31.0 — классов `CallCrypto/CallKeyDeriver/CallFrameEncryptor` в baksmali-дереве НЕТ (только стоковые `org/webrtc/FrameEncryptor`/`nativeSetFrameEncryptor`), sentinel'ов `CALL_E2E_`/`call_e2e_` 0 вхождений. Причина — R8-drift c3→c4 (26.31.0) + смена сигнатур якорей. E2E-аудио в звонках НЕ работает (fail-open: обычные незашифрованные звонки — честный режим по умолчанию, ложной индикации защиты нет).
+
+**video_toggle пофикшен (решение пользователя «сначала video_toggle, остальное deferred»)**: `apply_v_call_e2e_video_toggle.py` искал `c3/ru/ok/android/externcalls/sdk/video/internal/CameraManagerImpl.smali`, а в 26.31.0 класс в **c4** (та же сигнатура `setCameraEnabled(Z)V`/`.registers 3`/`isEarlyVideoEnabled:Z`). Фикс: путь c3→c4; `Lone/me/e2e/CallCrypto;->setVideoActive(Z)V` подтверждён в prebuilt `lib/classes4.dex` (CallCrypto/setVideoActive/CALL_LOCK_UI/currentCallIsVideo найдены). Патч применён, sentinel `:call_e2e_video_toggle` приземлён, собран в V5b.
+
+**Остальные 5 скриптов Call-E2E** (`hook_spike/keyderive/addpart_clear/w22_indicator/callhist`) → DEFER 26.32.0 (R8-rebump call-слоя требует отдельной сессии). Ограничение декларировано в релизных материалах.
+
+### 🔒 Chat-PIN: long-press UI-хук недоступен (F17) — DEFER 26.32.0 (документировано)
+
+`apply_v_chat_pin.py::patch_m93_titlelongclick` таргетирует `c1/be3.smali`, но в 26.31.0 be3 — chat-model (поля `a:J`+`C()Z`, pinned_sort/pinned_drag), НЕ toolbar. Реальный toolbar 26.31.0 — `c1/qtc.smali` (FrameLayout, поля `A:Ltq7`/`C:Ltq7`, методы `setTitleClickListener(Ltq7;)V`/`setTitleLongClickListener(Ltq7;)V`). `setTitleLongClickListener` в стоке НЕ вызывается вообще → стокового механизма long-press (aac.onTouchEvent→y.invoke) нет, хук не на что вешать. Скрипт печатает `[WARN] ... пропущен` и не падает; fallback — ADB broadcast `maxmod.chatpin.add/remove`. Основной PIN-гейт при открытии чата работает. Решение пользователя 18.09: документировать ограничение, релиз V5; R8-rebump-фикс (новый toolbar qtc + long-press поверх стока) — в 26.32.0.
+
 - **Сборка**: `make_v1.py --strict` — все 4 APK прошли gate (`exact_abi`, `no_tracer`, v2+v3 подпись `apksigner`, distinct arm64/armeabi-v7a SHA256 ассетов).
 - **Статические gate**: `reg_collision_gate.py`, `type_ref_gate.py`, `undefined_method_gate.py` — PASS (0 CRITICAL).
 - **Fan-out аудит**: все ~202 `apply_v_*.py` пройдены 13 параллельными агентами по тематическим группам (краши/E2E/call-e2e/antidel/scroll/ringback/watch-mode/hide-filter/antiread/telemetry/UI/security/misc) — багов в собранном APK не найдено; 3 rebuild-hazard в apply-скриптах обнаружены и исправлены до релиза. Процедура соответствует HARD-RULE «fan-out аудит перед публикацией».
@@ -228,4 +295,4 @@ WorkManager для expedited-задачи вызывает `getForegroundInfo` �
 
 ---
 
-*Аудит подготовлен по результатам fan-out аудита и трекера BUGS.md (секция 26.31.0 RS), сессии 2026-09-14/16. V3 = V1 + V2 + R8-drift аудит.*
+*Аудит подготовлен по результатам fan-out аудита и трекера BUGS.md (секция 26.31.0 RS), сессии 2026-09-14/16/18. V5 = V3 + фиксы V4/V5 + полный fan-out аудит ~290 скриптов. Ограничения: Call-E2E (кроме video_toggle) и Chat-PIN long-press — в 26.32.0.*
