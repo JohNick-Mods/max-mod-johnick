@@ -1,14 +1,14 @@
 # MAX Mod 26.31.0 RS V9
 
-**Date:** 2026-09-20 | **Tag:** v26.31.0.9
+**Дата:** 2026-09-20 | **Тег:** v26.31.0.9
 
-## Changes
+## Изменения
 
-- **Real fix for 2631-E7** (V8 did not fix it): `MIRROR_VERSION_TAG` was not bumped when building V8, so the mod kept announcing its old version via the E2E CAP protocol — this caused the stuck "peer has outdated mod version" banner and asymmetric encryption. Bumped to 26.31.0.9, statically verified inside classes.dex. Also added `clearE2EIssue` on the incoming CAP path (the banner used to clear only on the next outgoing send attempt).
-- **Fix for 2631-U8**: race between `onKey`/`onCancel` in `SubMenuBackKeyListener` could trigger `reopenRootMenu()` twice for one Back press, resetting caps/emoji/switch-tint styling in the mod settings screen. Added a single-fire guard.
+- **Реальный фикс 2631-E7** (V8 не исправил): `MIRROR_VERSION_TAG` не был поднят при сборке V8, из-за чего мод продолжал сообщать собеседнику старую версию через E2E CAP-протокол — отсюда залипшая плашка «у собеседника устаревшая версия мода» и асимметричное шифрование. Поднят до 26.31.0.9, статически подтверждён внутри classes.dex. Также добавлен `clearE2EIssue` на входящем CAP-пути — раньше плашка снималась только когда вы сами отправляли следующее сообщение.
+- **Фикс 2631-U8**: гонка между `onKey`/`onCancel` в `SubMenuBackKeyListener` могла вызывать `reopenRootMenu()` дважды на одно Back-нажатие, сбрасывая капс/эмодзи/цвет переключателей в «Настройках мода». Добавлен guard однократности.
 
-## Verification
+## Верификация
 
-- Static: single `26.31.0.9` version string in classes.dex (no stale `.6`/`.7`/`.8`).
-- Device (Redmi): app launches without crash, 4 subsection→Back cycles with no style regression.
-- Not verified this session: live 2-device E2E round-trip (needs a second SIM).
+- Статически: единственная строка версии `26.31.0.9` в classes.dex (старых `.6`/`.7`/`.8` нет).
+- На устройстве (Redmi): запуск без краша, 4 цикла «подраздел → Назад» без регрессии стиля.
+- Не проверено в этой сессии: живой E2E round-trip между двумя реальными устройствами (нужен второй SIM).
