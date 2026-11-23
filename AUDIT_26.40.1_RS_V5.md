@@ -1,11 +1,11 @@
-# Технический аудит MAX Mod 26.40.1 RS V5 (Pre-Release Draft)
+# Технический аудит MAX Mod 26.40.1 RS V5
 
 - **Версия мода:** `26.40.1 RS V5` (тег `v26.40.1.5`)
 - **Базовый APK:** `MAX 26.40.1 RS` (сборка `6928`)
 - **Дата:** `2026-11-23`
-- **Статус:** `STAGE A (r9) — OFFLINE GATES PASS ([PENDING WAVE D AVD SMOKE])`
+- **Статус:** `STAGE A (r9) — OFFLINE GATES PASS + AVD SMOKE PASS`
 - **Run ID:** `247fb56194a4` (`417` шагов, `status="success"`, `partial_fail=[]`, `soft_fail=[]`, commit `5bc1f3c`)
-- **Итоговый вердикт:** `[PENDING WAVE D AVD SMOKE]`
+- **Итоговый вердикт:** `PASS (AVD_PRERELEASE_GATE_RECEIPT = PASS)`
 
 ## 1. Назначение и границы отчёта
 Данный предрелизный черновик фиксирует дельту изменений между `26.40.1 RS V4` (`83c342e127331f55519162b0373a85f472de18af`) и релиз-кандидатом `V5` (`codex/e2e-v5-release-rc`), а также результаты предрелизных проверок документации.
@@ -21,7 +21,7 @@
 
 **Границы проверки:**
 - Финальная Wave D сборка 4 APK (`run_id=247fb56194a4`, commit `5bc1f3c`) и все `10/10` офлайн-гейтов пройдены (`publishable=True`).
-- Живой AVD smoke (`run_wave_d_full_smoke.py` + `universal_avd_prerelease_gate.py`): `[PENDING WAVE D AVD SMOKE]`.
+- Живой AVD smoke (`run_wave_d_full_smoke.py` + `universal_avd_prerelease_gate.py`): `PASS` (пройдены 1:1 E2E звонки, 5 типов E2E-вложений, история изменений сообщений, SAF-бэкап 60 параметров, справка, вкладки папок и регрессии; 0 крашей и 0 VerifyError; `AVD_PRERELEASE_GATE_RECEIPT = PASS`).
 
 ## 2. Основные изменения относительно V4 (`83c342e`)
 1. **E2E V5 (`B8`, `B2–B7`, `C2–C3`):**
@@ -68,6 +68,6 @@ b461f9cbfff30571cf62a03eefd946ba9ce2e3a05ae6b6164f909480a6d309b7  MAX_26.40.1_ar
 e158ab7961c674de190c089a94bb6081634e55712c288570395f158b16a8a1fc  MAX_26.40.1_arm7_V5_clone.apk
 ```
 
-## 5. Живой AVD / Device QA (`[PENDING WAVE D AVD SMOKE]`)
-- **Установка, AOT и запуск (main + clone):** `[PENDING WAVE D AVD SMOKE]`
-- **Wave D full smoke (`run_wave_d_full_smoke.py` + `universal_avd_prerelease_gate.py`):** `[PENDING WAVE D AVD SMOKE]`
+## 5. Живой AVD / Device QA (`PASS`)
+- **Установка, AOT и запуск (main + clone):** `PASS` (`0` крашей, `0` `VerifyError`).
+- **Wave D full smoke (`run_wave_d_full_smoke.py` + `universal_avd_prerelease_gate.py`):** `PASS` (пройдены 1:1 E2E звонки, 5 типов E2E-вложений, история изменений сообщений, SAF-бэкап 60 параметров, справка, вкладки папок и регрессии; `AVD_PRERELEASE_GATE_RECEIPT = PASS`).
