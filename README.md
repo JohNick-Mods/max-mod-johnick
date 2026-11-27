@@ -17,6 +17,8 @@
 
 ![MAX Mod 26.42.0 RS V1](./docs/promo/poster.png)
 
+🎬 [**Промо-видео 26.42.0 RS V1 (MP4)**](https://github.com/JohNick-Mods/max-mod-johnick/releases/download/v26.42.0.1/MAX_26.42.0_RS_V1_Promo.mp4) · 📄 [**Полный PDF-каталог**](https://github.com/JohNick-Mods/max-mod-johnick/releases/download/v26.42.0.1/MAX_26.42.0_RS_V1_Promo.pdf) · 🖼️ [**17 карточек**](./docs/promo/CARDS.md) · 📱 [**Мобильный PDF**](./docs/promo/Mod_by_JohNick_26.42.0_V1_mobile.pdf)
+
 Дата выпуска: **27 ноября 2026**.
 
 Первый крупный релиз на базе **MAX 26.42.0 RS** (сборка `6936`, 5-DEX архитектура):
@@ -26,7 +28,7 @@
 
 **Границы проверки:** `4/4` APK собраны (`39/39` шагов) и подписаны v2+v3 (`arm64`/`arm7`, основной и клон), `11/11` статических гейтов и матрица покрытия (`42/42`, `153` тумблера) пройдены (`PASS`); на эмуляторе выполнены полная проверка (`49/49`, `152/152`, `11/11`) и целевая повторная проверка финальной сборки (`PASS`, `0` крашей/ошибок верификации). Приёмка на физическом смартфоне (S25) и нативном 32-битном `arm7`-устройстве выполняется отдельно.
 
-Полный перечень изменений — в [CHANGELOG](./CHANGELOG.md) и [примечаниях к выпуску](./RELEASE_NOTES_v26.42.0.1.md). Обзорные материалы: [постер](./docs/promo/poster.png), [17 карточек инфографики](./docs/promo/CARDS.md) и [мобильный PDF](./docs/promo/Mod_by_JohNick_26.42.0_V1_mobile.pdf).
+Полный перечень изменений — в [CHANGELOG](./CHANGELOG.md) и [примечаниях к выпуску](./RELEASE_NOTES_v26.42.0.1.md). Обзорные материалы: [промо-видео (MP4)](https://github.com/JohNick-Mods/max-mod-johnick/releases/download/v26.42.0.1/MAX_26.42.0_RS_V1_Promo.mp4), [полный PDF-каталог](https://github.com/JohNick-Mods/max-mod-johnick/releases/download/v26.42.0.1/MAX_26.42.0_RS_V1_Promo.pdf), [постер](./docs/promo/poster.png), [17 карточек инфографики](./docs/promo/CARDS.md) и [мобильный PDF](./docs/promo/Mod_by_JohNick_26.42.0_V1_mobile.pdf).
 
 **Базовый APK:** MAX 26.42.0 RS (сборка `6936`). Варианты `arm64`/`arm7` и основной/`clone` доступны в релизе.
 ### Какой APK выбрать
